@@ -1,9 +1,24 @@
+#include <algorithm>
 #include <iostream>
 #include <windows.h>
+#include "Asteroid.h"
 
 using namespace std;
 
+void gameUpdate();
+
+vector<Bullet> bullets;
+vector<Asteroid> asteroids;
+Player player(400, 300, 90, 0, bullets);
+
+int large[][2] = {{0,0},{20,-20},{40,0},{60,-20},{80,0},{60,20},{80,50},{40,70},{20,70},{0,50},{0,0}};
+int medium[][2] = {{0,0},{10,-10},{20,0},{30,-10},{40,0},{30,10},{40,25},{20,35},{10,35},{0,25},{0,0}};
+int small[][2] = {};
+
 LRESULT CALLBACK windowsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+
+    gameUpdate();
+
     PAINTSTRUCT ps;
     HDC hdc = nullptr;
     RECT bg;
@@ -87,4 +102,23 @@ int main() {
         DispatchMessage(&msg);
     }
     return 0;
+}
+
+void gameUpdate() {
+    // Move all bullets
+    for (auto &item : bullets) {
+        item.move();
+    }
+    //Remove bullets if they hit an asteroid or went out of bounds
+    bullets.erase(
+        ranges::remove_if(bullets,
+                          [](Bullet& b) {
+                              return b.collisions(800, 600);
+                          }).begin(),
+        bullets.end()
+    );
+    for (auto &item : asteroids) {
+        item.move();
+    }
+
 }
