@@ -26,7 +26,7 @@ enum Direction {
 
 class obj {
 public:
-    obj(const int x, const int y, const int dir, const int vel) : data(x, y, dir, vel) {}
+    obj(const int xIN, const int yIN, const int dir, const int velIN) : data(xIN, yIN, dir, velIN) {}
     virtual void move();
     void rotate(int dir, int amount); //0 = left, 1 = right
     virtual ~obj() = default;
@@ -36,14 +36,14 @@ protected:
 
 class Bullet final : public obj {
 public:
-    Bullet(const int x, const int y, const int dir, const int vel) : obj(x, y, dir, vel) {}
+    Bullet(const int xIN, const int yIN, const int dir, const int velIN) : obj(xIN, yIN, dir, velIN) {}
     bool collisions(int width, int height); // check for collisions against asteroids and game screen edges
     //void update(); //call collision and move
 };
 
 class Player final : public obj {
 public:
-    Player(const int x, const int y, const int dir, const int vel, std::vector<Bullet>& bulletVec) : obj(x, y, dir, vel), bullet(&bulletVec) {}
+    Player(const int xIN, const int yIN, const int dir, const int velIN, std::vector<Bullet>& bulletVec) : obj(xIN, yIN, dir, velIN), bullet(&bulletVec) {}
     void shoot() {bullet->emplace_back(data.x, data.y, data.direction, 5);} // create a new bullet
     bool collisions();
     void addToScore(int amount);
@@ -55,12 +55,13 @@ private:
 
 class Asteroid final : public obj{
 public:
-    Asteroid(const int x, const int y, const int dir, const int vel, const int size, const int*shape) : obj(x, y, dir, vel), shapePtr(shape), size(size) {}
+    Asteroid(const int xIN, const int yIN, const int dir, const int velIN, const int size) : obj(xIN, yIN, dir, velIN), size(size) {}
     [[nodiscard]] int getSize() const {return size;}
+    [[nodiscard]] coords getCoords() const;
     //bool collisions();
-    const int *shapePtr;
+    //const int *shapePtr;
 private:
-    int size;
+    int size; // 0 is the largest, 2 is the smallest
 };
 
 

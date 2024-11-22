@@ -6,18 +6,23 @@
 using namespace std;
 
 void gameUpdate();
+void drawGameElements(const HDC& hdc);
 
 vector<Bullet> bullets;
 vector<Asteroid> asteroids;
 Player player(400, 300, 90, 0, bullets);
 
-int large[][2] = {{0,0},{20,-20},{40,0},{60,-20},{80,0},{60,20},{80,50},{40,70},{20,70},{0,50},{0,0}};
-int medium[][2] = {{0,0},{10,-10},{20,0},{30,-10},{40,0},{30,10},{40,25},{20,35},{10,35},{0,25},{0,0}};
-int small[][2] = {};
+//int large[][2] = {{0,0},{20,-20},{40,0},{60,-20},{80,0},{60,20},{80,50},{40,70},{20,70},{0,50},{0,0}};
+//int medium[][2] = {{0,0},{10,-10},{20,0},{30,-10},{40,0},{30,10},{40,25},{20,35},{10,35},{0,25},{0,0}};
+//int small[][2] = {}
+int asteroidSizes[3][11][2] = {{{0,0},{20,-20},{40,0},{60,-20},{80,0},{60,20},{80,50},{40,70},{20,70},{0,50},{0,0}},
+    {{0,0},{10,-10},{20,0},{30,-10},{40,0},{30,10},{40,25},{20,35},{10,35},{0,25},{0,0}},
+    {}}; //index 0 is large, index 1 is medium, index 2 is small
 
 LRESULT CALLBACK windowsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
     gameUpdate();
+    //Sleep(100);
 
     PAINTSTRUCT ps;
     HDC hdc = nullptr;
@@ -47,18 +52,21 @@ LRESULT CALLBACK windowsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
             hPen = CreatePen(PS_SOLID, 1, RGB(255,255,255));
             hOldPen = (HPEN)SelectObject(hdc, hPen);
+            //drawGameElements(hdc);
 
-            MoveToEx(hdc, 100, 100, nullptr);
-            LineTo(hdc, 120, 80);
-            LineTo(hdc, 140, 100);
-            LineTo(hdc, 160, 80);
-            LineTo(hdc, 180, 100);
-            LineTo(hdc, 160, 120);
-            LineTo(hdc, 180, 150);
-            LineTo(hdc, 140, 170);
-            LineTo(hdc, 120, 170);
-            LineTo(hdc, 100, 150);
-            LineTo(hdc, 100, 100);
+            cout << asteroids[0].getSize() << endl;
+
+            cout << "out" << endl;
+            for (auto& item : asteroids) {
+                cout << "got item" << endl;
+                auto [x, y] = item.getCoords();
+                const int size = item.getSize();
+                MoveToEx(hdc, x, y, nullptr);
+                for (int i = 0; i < 11; i++) {
+                    LineTo(hdc, asteroidSizes[size][i][0], asteroidSizes[size][i][1]);
+                }
+            }
+
             SelectObject(hdc, hOldPen);
             DeleteObject(brush);
 
@@ -96,7 +104,13 @@ int main() {
     ShowWindow(hwnd, SW_SHOW);
     UpdateWindow(hwnd);
 
+    Asteroid temp(100, 100, 0, 5, 0);
+    asteroids.push_back(temp);//.emplace_back(100, 100, 0, 5, 0);
+    //if (asteroids.empty()) {cout << "No Asteroids" << endl; return 1;}
+
     MSG msg = {};
+    SetTimer(hwnd, 1, 1000 / 60, NULL);
+
     while (GetMessage(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
@@ -117,8 +131,19 @@ void gameUpdate() {
                           }).begin(),
         bullets.end()
     );
-    for (auto &item : asteroids) {
+    /*for (auto &item : asteroids) {
         item.move();
-    }
+    }*/
+    InvalidateRect(GetConsoleWindow(), NULL, TRUE);
+}
 
+void drawGameElements(const HDC& hdc) {
+    for (auto& item : asteroids) {
+        auto [x, y] = item.getCoords();
+        const int size = item.getSize();
+        MoveToEx(hdc, x, y, nullptr);
+        for (int i = 0; i < 11; i++) {
+            LineTo(hdc, asteroidSizes[size][i][0], asteroidSizes[size][i][1]);
+        }
+    }
 }

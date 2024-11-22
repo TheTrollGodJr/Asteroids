@@ -27,8 +27,15 @@ void obj::rotate(const int dir, const int amount) {
 bool Bullet::collisions(const int width, const int height) {
     //TODO: logic to check collisions with an asteroid
 
-    return data.x < 0 || data.x > width || data.y < 0 || data.y > height;
+    return data.x == 0 || data.x == width || data.y == 0 || data.y == height;
 }
 
+
+
+
+coords Asteroid::getCoords() const {
+    const coords temp {data.x, data.y};
+    return temp;
+}
 
 
