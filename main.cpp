@@ -53,8 +53,11 @@ LRESULT CALLBACK windowsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     switch (uMsg) {
         case WM_DESTROY:
-            PostQuitMessage(0);
+            for (const auto item : asteroids) {
+                delete item;
+            }
 
+            PostQuitMessage(0);
             return 0;
         //black background
         case WM_ERASEBKGND:
@@ -198,7 +201,7 @@ void gameUpdate() {
 
     if (asteroids.empty()) {
         level += 1;
-        startlevel();
+        startLevel();
     }
 }
 
@@ -253,10 +256,17 @@ int getRandomInt(int min, int max) {
 }
 
 void startLevel() {
+    int count;
     switch(level) {
-        case 1:
-            for (int i = 0; i < 4; i++) {
-                Asteroid *temp = new Asteroid(getRandomInt(0, 75), );
-            }
+        case 1: count = 4; break;
+        case 2: count = 6; break;
+        case 3: count = 8; break;
+        default: count = 0;
+    }
+    for (int i = 0; i < count; i++) {
+        auto *temp = new Asteroid(getRandomInt(0, 100), getRandomInt(0, 100), getRandomInt(0, 359), 4, 0);
+        asteroids.push_back(temp);
     }
 }
+
+//void addAsteroids(int count) {}
