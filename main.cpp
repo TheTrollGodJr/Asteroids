@@ -9,15 +9,21 @@ void gameUpdate();
 void drawGameElements(const HDC& hdc);
 
 vector<Bullet> bullets;
-//vector<Asteroid> asteroids;
+vector<Asteroid*> asteroids;
 Player player(400, 300, 90, 0, bullets);
 
-Asteroid asteroid(100, 100, 0, 5, 0);
+int level = 0; // there are 4 levels of increasing difficulty
+
+// W, A, S, D, Space
+bool keyboardInputs[5] = {false};
+
+//Asteroid asteroid(100, 100, 0, 5, 1);
 
 //int large[][2] = {{0,0},{20,-20},{40,0},{60,-20},{80,0},{60,20},{80,50},{40,70},{20,70},{0,50},{0,0}};
 //int medium[][2] = {{0,0},{10,-10},{20,0},{30,-10},{40,0},{30,10},{40,25},{20,35},{10,35},{0,25},{0,0}};
 //int small[][2] = {}
 
+//TODO: the medium size is good, add the small size, make the large size a little smaller
 int asteroidSizes[3][11][2] = {{{0,0},{20,-20},{40,0},{60,-20},{80,0},{60,20},{80,50},{40,70},{20,70},{0,50},{0,0}},
     {{0,0},{10,-10},{20,0},{30,-10},{40,0},{30,10},{40,25},{20,35},{10,35},{0,25},{0,0}},
     {}}; //index 0 is large, index 1 is medium, index 2 is small
@@ -65,6 +71,16 @@ LRESULT CALLBACK windowsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             hPen = CreatePen(PS_SOLID, 1, RGB(255,255,255));
             hOldPen = (HPEN)SelectObject(hdc, hPen);
 
+            for (const auto item : asteroids) {
+                temp = item->getCoords();
+                size = item->getSize();
+                MoveToEx(hdc, temp.x, temp.y, nullptr);
+                for (int i = 0; i < 11; i++) {
+                    LineTo(hdc, temp.x+asteroidSizes[size][i][0], temp.y+asteroidSizes[size][i][1]);
+                }
+            }
+
+            /*
              temp = asteroid.getCoords();
              size = asteroid.getSize();
              //if (size > 2 || size < 0) {cerr << "Invalid size while getting item.size()" << endl;}
@@ -72,49 +88,24 @@ LRESULT CALLBACK windowsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
              for (int i = 0; i < 11; i++) {
                  LineTo(hdc, temp.x+asteroidSizes[size][i][0], temp.y+asteroidSizes[size][i][1]);
              }
+             */
 
-            gameUpdate();
+            //gameUpdate();
             SelectObject(hdc, hOldPen);
             DeleteObject(brush);
 
             EndPaint(hwnd, &ps);
             return 0;
-        /*
-            if (asteroids.empty()) {
-                cout << asteroids[0].getSize() << endl;
-                break;
+        case WM_KEYDOWN:
+            switch(wParam) {
+                case 'W': keyboardInputs[0] = true; break;
+                case 'A': keyboardInputs[1] = true; break;
+                case 'S': keyboardInputs[2] = true; break;
+                case 'D': keyboardInputs[3] = true; break;
+                case VK_SPACE: keyboardInputs[4] = true; break;
+                default: break;
             }
-
-
-            hdc = BeginPaint(hwnd, &ps);
-
-            hPen = CreatePen(PS_SOLID, 1, RGB(255,255,255));
-            hOldPen = (HPEN)SelectObject(hdc, hPen);
-            //drawGameElements(hdc);
-
-            if (asteroids.empty()) {
-                cout << asteroids[0].getSize() << endl;
-                break;
-            }
-
-            cout << "out" << endl;
-            for (auto& item : asteroids) {
-                cout << "got item" << endl;
-                auto [x, y] = item.getCoords();
-                const int size = item.getSize();
-                if (size > 2 || size < 0) {cerr << "Invalid size while getting item.size()" << endl; continue;}
-                MoveToEx(hdc, x, y, nullptr);
-                for (int i = 0; i < 11; i++) {
-                    LineTo(hdc, asteroidSizes[size][i][0], asteroidSizes[size][i][1]);
-                }
-            }
-
-            SelectObject(hdc, hOldPen);
-            DeleteObject(brush);
-
-            EndPaint(hwnd, &ps);
             return 0;
-            */
         default:
             return DefWindowProc(hwnd, uMsg, wParam, lParam);
     }
@@ -174,11 +165,15 @@ void gameUpdate() {
                           }).begin(),
         bullets.end()
     );
-    /*for (auto &item : asteroids) {
-        item.move();
-    }*/
-    //           InvalidateRect(GetConsoleWindow(), NULL, TRUE);
-    asteroid.move();
+    for (const auto item : asteroids) {
+        item->move();
+    }
+    //TODO: Add keyboard functionality -- this includes functionality for moving the player around/shooting
+    //TODO: check the asteroids vector -- if it is empty start the next level/level 1 at the start
+    //TODO: somewhere in here use collision functions from the classes to check if something's been hit
+    //TODO:     - if a asteroid has been hit, save its coords and size, delete it from the vector, then add a new asteroid with the same corods and a size 1 smaller; if the size can't go smaller the asteroid is perm removed until the next round.
+    //TODO:     - add collsion logic for when the player is hit -- sub a life/game over
+
 }
 
 /*
