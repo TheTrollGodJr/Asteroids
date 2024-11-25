@@ -3,6 +3,7 @@
 #include <windows.h>
 #include "Asteroid.h"
 #include <cmath>
+#include <random>
 
 using namespace std;
 
@@ -11,6 +12,8 @@ void drawGameElements(const HDC& hdc);
 coords rotatePoint(coords p, float cx, float cy, float angleDeg);
 void calculateTriangleVertices(int cx, int cy, float r, int angle, coords vertices[3]);
 void checkInputs();
+void startLevel();
+int getRandomInt(int min, int max);
 
 vector<Bullet> bullets;
 vector<Asteroid*> asteroids;
@@ -191,8 +194,12 @@ void gameUpdate() {
     //TODO:     - add collision logic for when the player is hit -- sub a life/game over
 
     player.cooldown();
-
     checkInputs();
+
+    if (asteroids.empty()) {
+        level += 1;
+        startlevel();
+    }
 }
 
 coords rotatePoint(coords p, float cx, float cy, float angleDeg) {
@@ -235,4 +242,21 @@ void checkInputs() {
     else if (keyboardInputs[1]) {player.rotate(1, 10);} // A pressed, rotate left
     else if (keyboardInputs[3]) {player.rotate(0, 10);} // D pressed, rotate right
     else if (keyboardInputs[4]) {player.shoot();}
+}
+
+int getRandomInt(int min, int max) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(min, max);
+
+    return dis(gen);
+}
+
+void startLevel() {
+    switch(level) {
+        case 1:
+            for (int i = 0; i < 4; i++) {
+                Asteroid *temp = new Asteroid(getRandomInt(0, 75), );
+            }
+    }
 }
