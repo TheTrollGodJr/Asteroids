@@ -2,15 +2,19 @@
 #include <iostream>
 #include <windows.h>
 #include "Asteroid.h"
+#include <cmath>
 
 using namespace std;
 
 void gameUpdate();
 void drawGameElements(const HDC& hdc);
+coords rotatePoint(coords p, float cx, float cy, float angleDeg);
+void calculateTriangleVertices(int cx, int cy, float r, int angle, coords vertices[3]);
+void checkInputs();
 
 vector<Bullet> bullets;
 vector<Asteroid*> asteroids;
-Player player(400, 300, 90, 0, bullets);
+Player player(400, 300, 90, 5, bullets);
 
 int level = 0; // there are 4 levels of increasing difficulty
 
@@ -40,6 +44,10 @@ LRESULT CALLBACK windowsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     HPEN hPen = nullptr;
     HPEN hOldPen = nullptr;
 
+    int size;
+    coords temp;
+    coords vertices[3];
+
     switch (uMsg) {
         case WM_DESTROY:
             PostQuitMessage(0);
@@ -63,8 +71,7 @@ LRESULT CALLBACK windowsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         case WM_PAINT:
             //cout << "Paint called" << endl;
 
-            int size;
-            coords temp;
+
 
             hdc = BeginPaint(hwnd, &ps);
 
@@ -80,15 +87,13 @@ LRESULT CALLBACK windowsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 }
             }
 
-            /*
-             temp = asteroid.getCoords();
-             size = asteroid.getSize();
-             //if (size > 2 || size < 0) {cerr << "Invalid size while getting item.size()" << endl;}
-             MoveToEx(hdc, temp.x, temp.y, nullptr);
-             for (int i = 0; i < 11; i++) {
-                 LineTo(hdc, temp.x+asteroidSizes[size][i][0], temp.y+asteroidSizes[size][i][1]);
-             }
-             */
+            temp = player.getCoords();
+            calculateTriangleVertices(temp.x, temp.y, 15.0, player.getAngle(), vertices);
+
+            MoveToEx(hdc, vertices[2].x, vertices[2].y, nullptr);
+            for (const auto item : vertices) {
+                LineTo(hdc, item.x, item.y);
+            }
 
             //gameUpdate();
             SelectObject(hdc, hOldPen);
@@ -106,9 +111,20 @@ LRESULT CALLBACK windowsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 default: break;
             }
             return 0;
+        case WM_KEYUP:
+            switch(wParam) {
+                case 'W': keyboardInputs[0] = false; break;
+                case 'A': keyboardInputs[1] = false; break;
+                case 'S': keyboardInputs[2] = false; break;
+                case 'D': keyboardInputs[3] = false; break;
+                case VK_SPACE: keyboardInputs[4] = true; break;
+                default: break;
+            }
+            return 0;
         default:
             return DefWindowProc(hwnd, uMsg, wParam, lParam);
     }
+    return 1;
 }
 
 int main() {
@@ -172,19 +188,51 @@ void gameUpdate() {
     //TODO: check the asteroids vector -- if it is empty start the next level/level 1 at the start
     //TODO: somewhere in here use collision functions from the classes to check if something's been hit
     //TODO:     - if a asteroid has been hit, save its coords and size, delete it from the vector, then add a new asteroid with the same corods and a size 1 smaller; if the size can't go smaller the asteroid is perm removed until the next round.
-    //TODO:     - add collsion logic for when the player is hit -- sub a life/game over
+    //TODO:     - add collision logic for when the player is hit -- sub a life/game over
 
+    player.cooldown();
+
+    checkInputs();
 }
 
-/*
-void drawGameElements(const HDC& hdc) {
-    for (auto& item : asteroids) {
-        auto [x, y] = item.getCoords();
-        const int size = item.getSize();
-        MoveToEx(hdc, x, y, nullptr);
-        for (int i = 0; i < 11; i++) {
-            LineTo(hdc, asteroidSizes[size][i][0], asteroidSizes[size][i][1]);
-        }
+coords rotatePoint(coords p, float cx, float cy, float angleDeg) {
+    // Convert angle to radians
+    float angleRad = angleDeg * (3.14159f / 180.0f);
+
+    // Translate the point to the origin, rotate, then translate back
+    float xTranslated = p.x - cx;
+    float yTranslated = p.y - cy;
+
+    float xRot = xTranslated * cos(angleRad) - yTranslated * sin(angleRad);
+    float yRot = xTranslated * sin(angleRad) + yTranslated * cos(angleRad);
+
+    // Translate back to the original center
+    p.x = static_cast<int>(xRot + cx);
+    p.y = static_cast<int>(yRot + cy);
+
+    return p;
+}
+
+void calculateTriangleVertices(const int cx, const int cy, const float r, const int angle, coords vertices[3]) {
+    //std::vector<coords> vertices(3);
+    //coords vertices[3] = {};
+
+    // First, the vertices of an unrotated equilateral triangle
+    vertices[0] = coords(cx, cy - r - 4);
+    vertices[1] = coords(cx - static_cast<int>(r * sin(60.0f * 3.14159f / 180.0f)), static_cast<int>(cy + r * cos(60.0f * 3.14159f / 180.0f)));
+    vertices[2] = coords(cx + static_cast<int>(r * sin(60.0f * 3.14159f / 180.0f)), static_cast<int>(cy + r * cos(60.0f * 3.14159f / 180.0f)));
+
+    // Rotate each vertex by the specified angle
+    for (int i = 0; i < 3; i++) {
+        vertices[i] = rotatePoint(vertices[i], static_cast<float>(cx), static_cast<float>(cy), static_cast<float>(angle));
     }
 }
-*/
+
+// W, A, S, D, Space
+void checkInputs() {
+    if (keyboardInputs[0]) {player.move();} // W pressed, move forward
+    else if (keyboardInputs[2]) {player.moveBack();} // S pressed, move backward
+    else if (keyboardInputs[1]) {player.rotate(1, 10);} // A pressed, rotate left
+    else if (keyboardInputs[3]) {player.rotate(0, 10);} // D pressed, rotate right
+    else if (keyboardInputs[4]) {player.shoot();}
+}

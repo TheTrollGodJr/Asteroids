@@ -17,6 +17,7 @@ struct Data {
 struct coords {
     int x;
     int y;
+    coords(int _x = 0, int _y = 0) : x(_x), y(_y) {}
 };
 
 enum Direction {
@@ -28,7 +29,6 @@ class obj {
 public:
     obj(const int xIN, const int yIN, const int dir, const int velIN) : data(xIN, yIN, dir, velIN) {}
     virtual void move();
-    void rotate(int dir, int amount); //0 = left, 1 = right
     virtual ~obj() = default;
 protected:
     Data data;
@@ -37,6 +37,7 @@ protected:
 class Bullet final : public obj {
 public:
     Bullet(const int xIN, const int yIN, const int dir, const int velIN) : obj(xIN, yIN, dir, velIN) {}
+    //TODO: use collisions function to delete asteroid
     bool collisions(int width, int height); // check for collisions against asteroids and game screen edges
     //void update(); //call collision and move
 };
@@ -44,12 +45,19 @@ public:
 class Player final : public obj {
 public:
     Player(const int xIN, const int yIN, const int dir, const int velIN, std::vector<Bullet>& bulletVec) : obj(xIN, yIN, dir, velIN), bullet(&bulletVec) {}
-    void shoot() {bullet->emplace_back(data.x, data.y, data.direction, 5);} // create a new bullet
+    void shoot(); // create a new bullet
     bool collisions();
     void addToScore(int amount);
+    void rotate(int dir, int amount); //0 = left, 1 = right
+    void moveBack();
+    void cooldown();
+    void setCooldown(int amount);
+    [[nodiscard]] coords getCoords() {return {data.x, data.y};}
+    [[nodiscard]] int getAngle() const {return data.direction;}
 private:
     int lives = 3;
     int score = 0;
+    int Cooldown = 0;
     std::vector<Bullet>* bullet;
 };
 
