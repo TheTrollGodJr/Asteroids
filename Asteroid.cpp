@@ -31,11 +31,8 @@ bool Bullet::collisions(const int width, const int height) {
 }
 
 
-
-
 coords Asteroid::getCoords() const {
-    const coords temp {data.x, data.y};
-    return temp;
+    return {data.x, data.y};
 }
 
 

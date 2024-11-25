@@ -55,7 +55,11 @@ private:
 
 class Asteroid final : public obj{
 public:
-    Asteroid(const int xIN, const int yIN, const int dir, const int velIN, const int size) : obj(xIN, yIN, dir, velIN), size(size) {}
+    Asteroid(const int xIN, const int yIN, const int dir, const int velIN, const int size) : obj(xIN, yIN, dir, velIN)
+    {
+        if (size > 2 || size < 0) {this->size = 0;}
+        else {this->size = size;}
+    }
     [[nodiscard]] int getSize() const {return size;}
     [[nodiscard]] coords getCoords() const;
     //bool collisions();
