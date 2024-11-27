@@ -4,6 +4,7 @@
 
 #include "Asteroid.h"
 #include <cmath>
+#include <iostream>
 
 void obj::move() {
     const double radians = (data.direction - 90) * M_PI / 180.0;
@@ -18,6 +19,21 @@ void obj::move() {
     if (data.y < 0) {data.y=600;}
     else if (data.y > 600) {data.y=0;}
 }
+
+void Bullet::move() {
+    const double radians = (data.direction - 90) * M_PI / 180.0;
+    const double deltaX = data.vel * cos(radians);
+    const double deltaY = data.vel * sin(radians);
+
+    data.x += static_cast<int>(deltaX);
+    data.y += static_cast<int>(deltaY);
+
+    if (data.x < 0) {remove = true;}
+    else if (data.x > 800) {remove = true;}
+    if (data.y < 0) {remove = true;}
+    else if (data.y > 600) {remove = true;}
+}
+
 
 void Player::rotate(const int dir, const int amount) {
     if (dir == LEFT) {data.direction += amount; return;}
@@ -50,8 +66,12 @@ void Player::setCooldown(const int amount) {
 }
 
 void Player::shoot() {
+    std::cout << "shoot called" << std::endl;
     if (Cooldown == 0) {
-        bullet->emplace_back(data.x, data.y, data.direction, 5);
+        std::cout << "No cooldown" << std::endl;
+        Bullet temp(data.x, data.y, data.direction, 5);
+        //bullet->emplace_back(data.x, data.y, data.direction, 5);
+        bullet->push_back(std::move(temp));
         Cooldown = 5;
     }
 }
@@ -59,13 +79,6 @@ void Player::shoot() {
 void Player::addToScore(const int amount) {
     score += amount;
 }
-
-bool Bullet::collisions(const int width, const int height) {
-    //TODO: logic to check collisions with an asteroid
-
-    return data.x == 0 || data.x == width || data.y == 0 || data.y == height;
-}
-
 
 coords Asteroid::getCoords() const {
     return {data.x, data.y};

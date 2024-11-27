@@ -14,6 +14,11 @@ void calculateTriangleVertices(int cx, int cy, float r, int angle, coords vertic
 void checkInputs();
 void startLevel();
 int getRandomInt(int min, int max);
+bool collisions();
+void checkCollisions();
+void removeAsteroid(const Asteroid* asteroid);
+coords calcBulletLine(coords pos, int angle);
+
 
 vector<Bullet> bullets;
 vector<Asteroid*> asteroids;
@@ -23,6 +28,7 @@ int level = 0; // there are 4 levels of increasing difficulty
 
 // W, A, S, D, Space
 bool keyboardInputs[5] = {false};
+bool shot = false;
 
 //Asteroid asteroid(100, 100, 0, 5, 1);
 
@@ -93,6 +99,13 @@ LRESULT CALLBACK windowsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 }
             }
 
+            for (const auto &item : bullets) {
+                coords pos = item.getCoords();
+                MoveToEx(hdc, pos.x, pos.y, nullptr);
+                pos = calcBulletLine(pos, item.getDirection());
+                LineTo(hdc, pos.x, pos.y);
+            }
+
             temp = player.getCoords();
             calculateTriangleVertices(temp.x, temp.y, 15.0, player.getAngle(), vertices);
 
@@ -123,7 +136,7 @@ LRESULT CALLBACK windowsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 case 'A': keyboardInputs[1] = false; break;
                 case 'S': keyboardInputs[2] = false; break;
                 case 'D': keyboardInputs[3] = false; break;
-                case VK_SPACE: keyboardInputs[4] = true; break;
+                case VK_SPACE: keyboardInputs[4] = true; shot = false; break;
                 default: break;
             }
             return 0;
@@ -174,27 +187,38 @@ int main() {
     return 0;
 }
 
+coords calcBulletLine(const coords pos, const int angle) {
+    float radians = (angle - 90) * (M_PI / 180.0f);
+
+    coords out;
+    out.x = pos.x + 5 * cos(radians);
+    out.y = pos.y + 5 * sin(radians);
+
+    return out;
+}
+
+
 void gameUpdate() {
     // Move all bullets
     for (auto &item : bullets) {
         item.move();
     }
-    //Remove bullets if they hit an asteroid or went out of bounds
-    bullets.erase(
-        ranges::remove_if(bullets,
-                          [](Bullet& b) {
-                              return b.collisions(800, 600);
-                          }).begin(),
-        bullets.end()
-    );
+
     for (const auto item : asteroids) {
         item->move();
     }
-    //TODO: Add keyboard functionality -- this includes functionality for moving the player around/shooting
-    //TODO: check the asteroids vector -- if it is empty start the next level/level 1 at the start
-    //TODO: somewhere in here use collision functions from the classes to check if something's been hit
-    //TODO:     - if a asteroid has been hit, save its coords and size, delete it from the vector, then add a new asteroid with the same corods and a size 1 smaller; if the size can't go smaller the asteroid is perm removed until the next round.
-    //TODO:     - add collision logic for when the player is hit -- sub a life/game over
+
+    bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [](const Bullet& obj) {
+    return obj.getRemoveStatus(); // Check if the object should be removed
+    }), bullets.end());
+
+    checkCollisions();
+
+    //DONE: Add keyboard functionality -- this includes functionality for moving the player around/shooting
+    //DONE: check the asteroids vector -- if it is empty start the next level/level 1 at the start
+    //DONE: somewhere in here use collision functions from the classes to check if something's been hit
+    //DONE:     - if a asteroid has been hit, save its coords and size, delete it from the vector, then add a new asteroid with the same corods and a size 1 smaller; if the size can't go smaller the asteroid is perm removed until the next round.
+    //DONE:     - add collision logic for when the player is hit -- sub a life/game over
 
     player.cooldown();
     checkInputs();
@@ -244,10 +268,10 @@ void checkInputs() {
     else if (keyboardInputs[2]) {player.moveBack();} // S pressed, move backward
     else if (keyboardInputs[1]) {player.rotate(1, 10);} // A pressed, rotate left
     else if (keyboardInputs[3]) {player.rotate(0, 10);} // D pressed, rotate right
-    else if (keyboardInputs[4]) {player.shoot();}
+    else if (keyboardInputs[4] && !shot) {player.shoot(); shot = true;}
 }
 
-int getRandomInt(int min, int max) {
+int getRandomInt(const int min, const int max) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dis(min, max);
@@ -269,4 +293,52 @@ void startLevel() {
     }
 }
 
-//void addAsteroids(int count) {}
+// Checks if a specified coordinate is inside any asteroid; if it is, destroy that asteroid
+bool collisions(const coords p, const bool destroy) {
+    bool inside = false;
+    for (const auto item : asteroids) {
+        const int size = item->getSize();
+        coords pos = item->getCoords();
+        for (size_t i = 0; i < 10; i++) {
+            coords a = {asteroidSizes[size][i][0], asteroidSizes[size][i][1]};
+            coords b;
+            if (i != 9) {b = {asteroidSizes[size][0][0], asteroidSizes[size][0][1]};}
+            else {b = {asteroidSizes[size][i+1][0], asteroidSizes[size][i+1][1]};}
+            // Ray casting algorithm
+            if (((a.y > p.y) != (b.y > p.y)) && (p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x)) {
+                inside = !inside;
+            }
+        }
+        if (inside) {
+            if (destroy) {removeAsteroid(item);}
+            break;
+        }
+    }
+    return inside; // If true, remove the bullet. Otherwise, nothing happens
+}
+
+// Check whether a bullet/player is in an asteroid
+void checkCollisions() {
+    bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [](const Bullet& obj) {
+    return collisions(obj.getCoords(), true); // Check if the object should be removed
+    }), bullets.end());
+
+    if (collisions(player.getCoords(), false)) {
+        player.hit();
+    }
+}
+
+// Destroy an asteroid and create smaller if needed
+void removeAsteroid(const Asteroid* asteroid) {
+    const int size = asteroid->getSize();
+    const coords pos = asteroid->getCoords();
+    int speed = asteroid->getSpeed();
+    delete asteroid;
+    asteroids.erase(std::remove(asteroids.begin(), asteroids.end(), asteroid), asteroids.end());
+    if (size != 2) {
+        auto *temp = new Asteroid(pos.x, pos.y, getRandomInt(0, 359), speed+=2, size-1);
+        asteroids.push_back(temp);
+        temp = new Asteroid(pos.x, pos.y, getRandomInt(0, 359), speed+=2, size-1);
+        asteroids.push_back(temp);
+    }
+}

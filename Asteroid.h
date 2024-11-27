@@ -37,16 +37,20 @@ protected:
 class Bullet final : public obj {
 public:
     Bullet(const int xIN, const int yIN, const int dir, const int velIN) : obj(xIN, yIN, dir, velIN) {}
-    //TODO: use collisions function to delete asteroid
-    bool collisions(int width, int height); // check for collisions against asteroids and game screen edges
-    //void update(); //call collision and move
+    [[nodiscard]] coords getCoords() const {return {data.x, data.y};}
+    [[nodiscard]] int getDirection() const {return data.direction;}
+    [[nodiscard]] bool getRemoveStatus() const {return remove;}
+    void move() override;
+private:
+    bool remove = false;
 };
 
 class Player final : public obj {
 public:
     Player(const int xIN, const int yIN, const int dir, const int velIN, std::vector<Bullet>& bulletVec) : obj(xIN, yIN, dir, velIN), bullet(&bulletVec) {}
     void shoot(); // create a new bullet
-    bool collisions();
+    //bool collisions();
+    void hit() {lives -= 1;} // remove a life
     void addToScore(int amount);
     void rotate(int dir, int amount); //0 = left, 1 = right
     void moveBack();
@@ -70,6 +74,7 @@ public:
     }
     [[nodiscard]] int getSize() const {return size;}
     [[nodiscard]] coords getCoords() const;
+    [[nodiscard]] int getSpeed() const {return data.vel;}
     //bool collisions();
     //const int *shapePtr;
 private:
