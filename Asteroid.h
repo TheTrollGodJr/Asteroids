@@ -5,6 +5,7 @@
 #ifndef ASTEROID_H
 #define ASTEROID_H
 
+#include <string>
 #include <vector>
 
 struct Data {
@@ -58,6 +59,7 @@ public:
     void setCooldown(int amount);
     [[nodiscard]] coords getCoords() {return {data.x, data.y};}
     [[nodiscard]] int getAngle() const {return data.direction;}
+    [[nodiscard]] std::string getScore() const;
 private:
     int lives = 3;
     int score = 0;

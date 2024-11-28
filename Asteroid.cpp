@@ -80,6 +80,11 @@ void Player::addToScore(const int amount) {
     score += amount;
 }
 
+std::string Player::getScore() const {
+    return std::to_string(score);
+}
+
+
 coords Asteroid::getCoords() const {
     return {data.x, data.y};
 }

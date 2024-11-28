@@ -18,7 +18,8 @@ bool collisions();
 void checkCollisions();
 void removeAsteroid(const Asteroid* asteroid);
 coords calcBulletLine(coords pos, int angle);
-
+void displayGameObject(const HDC& hdc);
+void displayGameInfo(HDC &hdc);
 
 vector<Bullet> bullets;
 vector<Asteroid*> asteroids;
@@ -39,7 +40,19 @@ bool shot = false;
 //TODO: the medium size is good, add the small size, make the large size a little smaller
 int asteroidSizes[3][11][2] = {{{0,0},{20,-20},{40,0},{60,-20},{80,0},{60,20},{80,50},{40,70},{20,70},{0,50},{0,0}},
     {{0,0},{10,-10},{20,0},{30,-10},{40,0},{30,10},{40,25},{20,35},{10,35},{0,25},{0,0}},
-    {{0,0,},{5,-5},{10,0},{15,-5},{20,0},{15,5},{20,12},{10,17},{5,17},{0,12},{0,0}}}; //index 0 is large, index 1 is medium, index 2 is small
+    {{0,0},{5,-5},{10,0},{15,-5},{20,0},{15,5},{20,12},{10,17},{5,17},{0,12},{0,0}}}; //index 0 is large, index 1 is medium, index 2 is small
+
+// each number gets a 15x20 grid
+vector<vector<vector<int>>> numbers {{{0,0},{0,20}}, //1
+    {{0,0},{15,0},{15,10},{0,10},{0,20},{15,20}}, //2
+    {{0,0},{15,0},{15,10},{0,10},{15,10},{15,20},{0,20}}, //3
+    {{0,0},{0,10},{15,10},{15,0},{15,20}}, //4
+    {{15,0},{0,0},{0,10},{15,10},{15,20},{0,20}}, //5
+    {{0,0},{0,20},{15,20},{15,10},{0,10}}, //6
+    {{0,0},{15,0},{15,20}}, //7
+    {{0,0},{15,0},{15,20},{0,20},{0,0},{0,10},{15,10}}, //8
+    {{15,20},{15,0},{0,0},{0,10},{15,10}}, //9
+    {{0,0},{15,0},{15,20},{0,20},{0,0}}}; //0
 
 LRESULT CALLBACK windowsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
@@ -52,10 +65,6 @@ LRESULT CALLBACK windowsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     HBRUSH brush = nullptr;
     HPEN hPen = nullptr;
     HPEN hOldPen = nullptr;
-
-    int size;
-    coords temp;
-    coords vertices[3];
 
     switch (uMsg) {
         case WM_DESTROY:
@@ -81,40 +90,16 @@ LRESULT CALLBACK windowsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             InvalidateRect(hwnd, NULL, TRUE);
             return 0;
         case WM_PAINT:
-            //cout << "Paint called" << endl;
-
-
-
             hdc = BeginPaint(hwnd, &ps);
 
             hPen = CreatePen(PS_SOLID, 1, RGB(255,255,255));
             hOldPen = (HPEN)SelectObject(hdc, hPen);
 
-            for (const auto item : asteroids) {
-                temp = item->getCoords();
-                size = item->getSize();
-                MoveToEx(hdc, temp.x, temp.y, nullptr);
-                for (int i = 0; i < 11; i++) {
-                    LineTo(hdc, temp.x+asteroidSizes[size][i][0], temp.y+asteroidSizes[size][i][1]);
-                }
-            }
+            displayGameObject(hdc);
+            displayGameInfo(hdc);
 
-            for (const auto &item : bullets) {
-                coords pos = item.getCoords();
-                MoveToEx(hdc, pos.x, pos.y, nullptr);
-                pos = calcBulletLine(pos, item.getDirection());
-                LineTo(hdc, pos.x, pos.y);
-            }
 
-            temp = player.getCoords();
-            calculateTriangleVertices(temp.x, temp.y, 15.0, player.getAngle(), vertices);
 
-            MoveToEx(hdc, vertices[2].x, vertices[2].y, nullptr);
-            for (const auto item : vertices) {
-                LineTo(hdc, item.x, item.y);
-            }
-
-            //gameUpdate();
             SelectObject(hdc, hOldPen);
             DeleteObject(brush);
 
@@ -301,17 +286,14 @@ bool collisions(const coords p, const bool destroy) {
         coords pos = item->getCoords();
         for (size_t i = 0; i < 10; i++) {
             coords a = {asteroidSizes[size][i][0]+pos.x, asteroidSizes[size][i][1]+pos.y};
-            coords b;
-            if (i != 9) {b = {asteroidSizes[size][0][0], asteroidSizes[size][0][1]};}
-            else {b = {asteroidSizes[size][i+1][0], asteroidSizes[size][i+1][1]};}
+            coords b = {asteroidSizes[size][i+1][0]+pos.x, asteroidSizes[size][i+1][1]+pos.y};
             // Ray casting algorithm
             if (((a.y > p.y) != (b.y > p.y)) && (p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x)) {
                 inside = !inside;
             }
         }
         if (inside) {
-            cout << "hit" << endl;
-            if (destroy) {removeAsteroid(item); cout << "destroy" << endl;}
+            if (destroy) {removeAsteroid(item);}
             break;
         }
     }
@@ -342,4 +324,38 @@ void removeAsteroid(const Asteroid* asteroid) {
         temp = new Asteroid(pos.x, pos.y, getRandomInt(0, 359), speed+=2, size+1);
         asteroids.push_back(temp);
     }
+}
+
+void displayGameObject(const HDC& hdc) {
+    coords temp;
+    coords vertices[3];
+    for (const auto item : asteroids) {
+        temp = item->getCoords();
+        const int size = item->getSize();
+        MoveToEx(hdc, temp.x, temp.y, nullptr);
+        for (int i = 0; i < 11; i++) {
+            LineTo(hdc, temp.x+asteroidSizes[size][i][0], temp.y+asteroidSizes[size][i][1]);
+        }
+    }
+
+    for (const auto &item : bullets) {
+        coords pos = item.getCoords();
+        MoveToEx(hdc, pos.x, pos.y, nullptr);
+        pos = calcBulletLine(pos, item.getDirection());
+        LineTo(hdc, pos.x, pos.y);
+    }
+
+    temp = player.getCoords();
+    calculateTriangleVertices(temp.x, temp.y, 15.0, player.getAngle(), vertices);
+
+    MoveToEx(hdc, vertices[2].x, vertices[2].y, nullptr);
+    for (const auto item : vertices) {
+        LineTo(hdc, item.x, item.y);
+    }
+}
+
+void displayGameInfo(HDC &hdc) {
+    string score = player.getScore();
+
+
 }
