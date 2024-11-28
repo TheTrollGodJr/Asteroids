@@ -51,17 +51,19 @@ public:
     Player(const int xIN, const int yIN, const int dir, const int velIN, std::vector<Bullet>& bulletVec) : obj(xIN, yIN, dir, velIN), bullet(&bulletVec) {}
     void shoot(); // create a new bullet
     //bool collisions();
-    void hit() {lives -= 1;} // remove a life
+    void hit(bool status);
     void addToScore(int amount);
     void rotate(int dir, int amount); //0 = left, 1 = right
     void moveBack();
     void cooldown();
     void setCooldown(int amount);
+    [[nodiscard]] bool canBeHit() const;
     [[nodiscard]] coords getCoords() const {return {data.x, data.y};}
     [[nodiscard]] int getAngle() const {return data.direction;}
     [[nodiscard]] std::string getScore() const;
     [[nodiscard]] int getLives() const;
 private:
+    bool Hit = false;
     int lives = 3;
     int score = 0;
     int Cooldown = 0;

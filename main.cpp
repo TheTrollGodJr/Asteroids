@@ -25,11 +25,13 @@ vector<Bullet> bullets;
 vector<Asteroid*> asteroids;
 Player player(400, 300, 90, 5, bullets);
 
-int level = 0; // there are 4 levels of increasing difficulty
+//int level = 0; // there are 4 levels of increasing difficulty
+int asteroidSpawnCount = 4;
 
 // W, A, S, D, Space
 bool keyboardInputs[5] = {false};
 bool shot = false;
+bool gameOver = false;
 
 //Asteroid asteroid(100, 100, 0, 5, 1);
 
@@ -96,10 +98,17 @@ LRESULT CALLBACK windowsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             hPen = CreatePen(PS_SOLID, 1, RGB(255,255,255));
             hOldPen = (HPEN)SelectObject(hdc, hPen);
 
+            if (gameOver) {
+                SetBkMode(hdc, RGB(0,0,0));
+                SetTextColor(hdc, RGB(255, 255, 255));
+                TextOut(hdc, 350, 250, "GAME OVER", 9);
+                TextOut(hdc, 325, 275, "Press 'Enter' to exit", 21);
+
+                KillTimer(hwnd, 1);
+            }
+
             displayGameObject(hdc);
             displayGameInfo(hdc);
-
-
 
             SelectObject(hdc, hOldPen);
             DeleteObject(brush);
@@ -113,6 +122,7 @@ LRESULT CALLBACK windowsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 case 'S': keyboardInputs[2] = true; break;
                 case 'D': keyboardInputs[3] = true; break;
                 case VK_SPACE: keyboardInputs[4] = true; break;
+                case VK_RETURN: if (gameOver) {PostQuitMessage(0);}
                 default: break;
             }
             return 0;
@@ -194,6 +204,12 @@ void gameUpdate() {
         item->move();
     }
 
+    checkInputs();
+
+    if (player.getLives() == 0) {
+        gameOver = true;
+    }
+
     bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [](const Bullet& obj) {
     return obj.getRemoveStatus(); // Check if the object should be removed
     }), bullets.end());
@@ -207,10 +223,9 @@ void gameUpdate() {
     //DONE:     - add collision logic for when the player is hit -- sub a life/game over
 
     player.cooldown();
-    checkInputs();
+
 
     if (asteroids.empty()) {
-        level += 1;
         startLevel();
     }
 }
@@ -266,17 +281,11 @@ int getRandomInt(const int min, const int max) {
 }
 
 void startLevel() {
-    int count;
-    switch(level) {
-        case 1: count = 4; break;
-        case 2: count = 6; break;
-        case 3: count = 8; break;
-        default: count = 0;
-    }
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < asteroidSpawnCount; i++) {
         auto *temp = new Asteroid(getRandomInt(0, 100), getRandomInt(0, 100), getRandomInt(0, 359), 3, 0);
         asteroids.push_back(temp);
     }
+    asteroidSpawnCount += 2;
 }
 
 // Checks if a specified coordinate is inside any asteroid; if it is, destroy that asteroid
@@ -307,8 +316,15 @@ void checkCollisions() {
     return collisions(obj.getCoords(), true); // Check if the object should be removed
     }), bullets.end());
 
-    if (collisions(player.getCoords(), false)) {
-        player.hit();
+    if (player.canBeHit()) {
+        if (collisions(player.getCoords(), false)) {
+            player.hit(true);
+        }
+    }
+    else {
+        if (!collisions(player.getCoords(), false)) {
+            player.hit(false);
+        }
     }
 }
 
@@ -379,6 +395,7 @@ void displayGameInfo(HDC &hdc) {
         }
         xAlign += 20;
     }
+
     yAlign += 50;
     xAlign = 50;
 

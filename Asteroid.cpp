@@ -86,6 +86,23 @@ int Player::getLives() const {
     return lives;
 }
 
+bool Player::canBeHit() const {
+    return !Hit;
+}
+
+void Player::hit(const bool status) {
+    if (status) {
+        lives -= 1;
+        Hit = true;
+        data.x = 400;
+        data.y = 300;
+    }
+    else {
+        Hit = false;
+    }
+}
+
+
 
 coords Asteroid::getCoords() const {
     return {data.x, data.y};
