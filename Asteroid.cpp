@@ -69,7 +69,7 @@ void Player::shoot() {
     std::cout << "shoot called" << std::endl;
     if (Cooldown == 0) {
         std::cout << "No cooldown" << std::endl;
-        Bullet temp(data.x, data.y, data.direction, 5);
+        Bullet temp(data.x, data.y, data.direction, 10);
         //bullet->emplace_back(data.x, data.y, data.direction, 5);
         bullet->push_back(std::move(temp));
         Cooldown = 5;

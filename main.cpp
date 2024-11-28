@@ -39,7 +39,7 @@ bool shot = false;
 //TODO: the medium size is good, add the small size, make the large size a little smaller
 int asteroidSizes[3][11][2] = {{{0,0},{20,-20},{40,0},{60,-20},{80,0},{60,20},{80,50},{40,70},{20,70},{0,50},{0,0}},
     {{0,0},{10,-10},{20,0},{30,-10},{40,0},{30,10},{40,25},{20,35},{10,35},{0,25},{0,0}},
-    {}}; //index 0 is large, index 1 is medium, index 2 is small
+    {{0,0,},{5,-5},{10,0},{15,-5},{20,0},{15,5},{20,12},{10,17},{5,17},{0,12},{0,0}}}; //index 0 is large, index 1 is medium, index 2 is small
 
 LRESULT CALLBACK windowsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
@@ -288,7 +288,7 @@ void startLevel() {
         default: count = 0;
     }
     for (int i = 0; i < count; i++) {
-        auto *temp = new Asteroid(getRandomInt(0, 100), getRandomInt(0, 100), getRandomInt(0, 359), 4, 0);
+        auto *temp = new Asteroid(getRandomInt(0, 100), getRandomInt(0, 100), getRandomInt(0, 359), 3, 0);
         asteroids.push_back(temp);
     }
 }
@@ -300,7 +300,7 @@ bool collisions(const coords p, const bool destroy) {
         const int size = item->getSize();
         coords pos = item->getCoords();
         for (size_t i = 0; i < 10; i++) {
-            coords a = {asteroidSizes[size][i][0], asteroidSizes[size][i][1]};
+            coords a = {asteroidSizes[size][i][0]+pos.x, asteroidSizes[size][i][1]+pos.y};
             coords b;
             if (i != 9) {b = {asteroidSizes[size][0][0], asteroidSizes[size][0][1]};}
             else {b = {asteroidSizes[size][i+1][0], asteroidSizes[size][i+1][1]};}
@@ -310,7 +310,8 @@ bool collisions(const coords p, const bool destroy) {
             }
         }
         if (inside) {
-            if (destroy) {removeAsteroid(item);}
+            cout << "hit" << endl;
+            if (destroy) {removeAsteroid(item); cout << "destroy" << endl;}
             break;
         }
     }
@@ -336,9 +337,9 @@ void removeAsteroid(const Asteroid* asteroid) {
     delete asteroid;
     asteroids.erase(std::remove(asteroids.begin(), asteroids.end(), asteroid), asteroids.end());
     if (size != 2) {
-        auto *temp = new Asteroid(pos.x, pos.y, getRandomInt(0, 359), speed+=2, size-1);
+        auto *temp = new Asteroid(pos.x, pos.y, getRandomInt(0, 359), speed+=2, size+1);
         asteroids.push_back(temp);
-        temp = new Asteroid(pos.x, pos.y, getRandomInt(0, 359), speed+=2, size-1);
+        temp = new Asteroid(pos.x, pos.y, getRandomInt(0, 359), speed+=2, size+1);
         asteroids.push_back(temp);
     }
 }
