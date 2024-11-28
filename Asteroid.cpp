@@ -66,9 +66,7 @@ void Player::setCooldown(const int amount) {
 }
 
 void Player::shoot() {
-    std::cout << "shoot called" << std::endl;
     if (Cooldown == 0) {
-        std::cout << "No cooldown" << std::endl;
         Bullet temp(data.x, data.y, data.direction, 10);
         //bullet->emplace_back(data.x, data.y, data.direction, 5);
         bullet->push_back(std::move(temp));
@@ -82,6 +80,10 @@ void Player::addToScore(const int amount) {
 
 std::string Player::getScore() const {
     return std::to_string(score);
+}
+
+int Player::getLives() const {
+    return lives;
 }
 
 

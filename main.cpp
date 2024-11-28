@@ -43,7 +43,9 @@ int asteroidSizes[3][11][2] = {{{0,0},{20,-20},{40,0},{60,-20},{80,0},{60,20},{8
     {{0,0},{5,-5},{10,0},{15,-5},{20,0},{15,5},{20,12},{10,17},{5,17},{0,12},{0,0}}}; //index 0 is large, index 1 is medium, index 2 is small
 
 // each number gets a 15x20 grid
-vector<vector<vector<int>>> numbers {{{0,0},{0,20}}, //1
+vector<vector<vector<int>>> numCoords
+    {{{0,0},{15,0},{15,20},{0,20},{0,0}}, //0
+    {{0,0},{0,20}}, //1
     {{0,0},{15,0},{15,10},{0,10},{0,20},{15,20}}, //2
     {{0,0},{15,0},{15,10},{0,10},{15,10},{15,20},{0,20}}, //3
     {{0,0},{0,10},{15,10},{15,0},{15,20}}, //4
@@ -51,8 +53,7 @@ vector<vector<vector<int>>> numbers {{{0,0},{0,20}}, //1
     {{0,0},{0,20},{15,20},{15,10},{0,10}}, //6
     {{0,0},{15,0},{15,20}}, //7
     {{0,0},{15,0},{15,20},{0,20},{0,0},{0,10},{15,10}}, //8
-    {{15,20},{15,0},{0,0},{0,10},{15,10}}, //9
-    {{0,0},{15,0},{15,20},{0,20},{0,0}}}; //0
+    {{15,20},{15,0},{0,0},{0,10},{15,10}}}; //9
 
 LRESULT CALLBACK windowsProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
@@ -317,6 +318,14 @@ void removeAsteroid(const Asteroid* asteroid) {
     const coords pos = asteroid->getCoords();
     int speed = asteroid->getSpeed();
     delete asteroid;
+
+    switch (size) {
+        case 0: player.addToScore(20); break;
+        case 1: player.addToScore(50); break;
+        case 2: player.addToScore(100); break;
+        default: break;
+    }
+
     asteroids.erase(std::remove(asteroids.begin(), asteroids.end(), asteroid), asteroids.end());
     if (size != 2) {
         auto *temp = new Asteroid(pos.x, pos.y, getRandomInt(0, 359), speed+=2, size+1);
@@ -349,13 +358,38 @@ void displayGameObject(const HDC& hdc) {
     calculateTriangleVertices(temp.x, temp.y, 15.0, player.getAngle(), vertices);
 
     MoveToEx(hdc, vertices[2].x, vertices[2].y, nullptr);
-    for (const auto item : vertices) {
-        LineTo(hdc, item.x, item.y);
+    for (const auto [x, y] : vertices) {
+        LineTo(hdc, x, y);
     }
 }
 
 void displayGameInfo(HDC &hdc) {
-    string score = player.getScore();
+    int xAlign = 40;
+    int yAlign = 20;
 
+    const string scoreStr = player.getScore();
+    char score[scoreStr.size()];
+    strcpy(score, scoreStr.c_str());
 
+    for (const char &item : score) {
+        const int scoreIndex = item - '0';
+        MoveToEx(hdc, numCoords[scoreIndex][0][0]+xAlign, numCoords[scoreIndex][1][1]+yAlign, nullptr);
+        for (auto &coord : numCoords[item-'0']) {
+            LineTo(hdc, coord[0]+xAlign, coord[1]+yAlign);
+        }
+        xAlign += 20;
+    }
+    yAlign += 50;
+    xAlign = 50;
+
+    //calculateTriangleVertices(const int cx, const int cy, const float r, const int angle, coords vertices[3])
+    for (size_t i = 0; i < player.getLives(); i++) {
+        coords vertices[3];
+        calculateTriangleVertices(xAlign, yAlign, 13, 0, vertices);
+        MoveToEx(hdc, vertices[2].x, vertices[2].y, nullptr);
+        for (const auto &[x, y] : vertices) {
+            LineTo(hdc, x, y);
+        }
+        xAlign += 30;
+    }
 }

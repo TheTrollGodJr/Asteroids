@@ -18,7 +18,7 @@ struct Data {
 struct coords {
     int x;
     int y;
-    coords(int _x = 0, int _y = 0) : x(_x), y(_y) {}
+    //coords(int _x = 0, int _y = 0) : x(_x), y(_y) {}
 };
 
 enum Direction {
@@ -57,9 +57,10 @@ public:
     void moveBack();
     void cooldown();
     void setCooldown(int amount);
-    [[nodiscard]] coords getCoords() {return {data.x, data.y};}
+    [[nodiscard]] coords getCoords() const {return {data.x, data.y};}
     [[nodiscard]] int getAngle() const {return data.direction;}
     [[nodiscard]] std::string getScore() const;
+    [[nodiscard]] int getLives() const;
 private:
     int lives = 3;
     int score = 0;
