@@ -1,89 +1,105 @@
-//
-// Created by thetr on 11/20/2024.
-//
-
 #ifndef ASTEROID_H
 #define ASTEROID_H
 
 #include <string>
 #include <vector>
 
+/*
+            -------- STRUCTURES --------
+*/
+
+// Create a structure to hold game object properties
 struct Data {
+    // Coordinates
     int x;
     int y;
+
     int direction; //0-359
-    int vel;
+    int vel; // velocity
 };
 
+// Create a structure to hold a coordinate point
 struct coords {
     int x;
     int y;
-    //coords(int _x = 0, int _y = 0) : x(_x), y(_y) {}
 };
 
-enum Direction {
-    LEFT=0,
-    RIGHT
-};
+/*
+            -------- CLASSES --------
+*/
 
+// Parent obj class
 class obj {
 public:
-    obj(const int xIN, const int yIN, const int dir, const int velIN) : data(xIN, yIN, dir, velIN) {}
-    virtual void move();
+    obj(const int xIN, const int yIN, const int dir, const int velIN) : data(xIN, yIN, dir, velIN) {} // Declare obj properties
+    virtual void move(); // Move the obj forward in the direction it is facing
     virtual ~obj() = default;
 protected:
-    Data data;
+    Data data; // Initialize object properties structure
 };
 
+
+// Bullet object class as a child of obj
 class Bullet final : public obj {
 public:
-    Bullet(const int xIN, const int yIN, const int dir, const int velIN) : obj(xIN, yIN, dir, velIN) {}
-    [[nodiscard]] coords getCoords() const {return {data.x, data.y};}
-    [[nodiscard]] int getDirection() const {return data.direction;}
-    [[nodiscard]] bool getRemoveStatus() const {return remove;}
-    void move() override;
+    Bullet(const int xIN, const int yIN, const int dir, const int velIN) : obj(xIN, yIN, dir, velIN) {} // Declare bullet properties
+
+    [[nodiscard]] int getDirection() const; // Return the bullets direction
+    [[nodiscard]] coords getCoords() const; // Return the bullets coordinates
+    [[nodiscard]] bool getRemoveStatus() const; // Return whether the bullet should be removed
+
+    void move() override; // Override the move function in obj
+
 private:
-    bool remove = false;
+    bool remove = false; // Determines whether the bullet can be removed
 };
 
+
+// Player class as a child of obj
 class Player final : public obj {
 public:
-    Player(const int xIN, const int yIN, const int dir, const int velIN, std::vector<Bullet>& bulletVec) : obj(xIN, yIN, dir, velIN), bullet(&bulletVec) {}
+    Player(const int xIN, const int yIN, const int dir, const int velIN, std::vector<Bullet>& bulletVec) : obj(xIN, yIN, dir, velIN), bullet(&bulletVec) {} // Declare player properties
+
     void shoot(); // create a new bullet
-    //bool collisions();
-    void hit(bool status);
-    void addToScore(int amount);
-    void rotate(int dir, int amount); //0 = left, 1 = right
-    void moveBack();
-    void cooldown();
-    void setCooldown(int amount);
-    [[nodiscard]] bool canBeHit() const;
-    [[nodiscard]] coords getCoords() const {return {data.x, data.y};}
-    [[nodiscard]] int getAngle() const {return data.direction;}
-    [[nodiscard]] std::string getScore() const;
-    [[nodiscard]] int getLives() const;
+    void moveBack(); // Move the player backwards
+    void cooldown(); // Decrease shooting cooldown
+    void hit(bool status); // Change the players 'hit' status
+    void addToScore(int amount); // Add points to the players score
+    void setCooldown(int amount); // Set a shooting cooldown time
+    void rotate(int dir, int amount); // Rotate the player left or right
+
+    [[nodiscard]] int getAngle() const; // Return the players direction
+    [[nodiscard]] int getLives() const; // Return the players lives
+    [[nodiscard]] bool canBeHit() const; // Return whether the player can be collided with
+    [[nodiscard]] coords getCoords() const; // Return the players coordinates
+    [[nodiscard]] std::string getScore() const; // Return the players score
+
 private:
-    bool Hit = false;
-    int lives = 3;
-    int score = 0;
-    int Cooldown = 0;
-    std::vector<Bullet>* bullet;
+    int lives = 3; // Declare the amount of lives the player has
+    int score = 0; // Declare the players score
+    int Cooldown = 0; // Declare the players shooting cooldown
+    bool Hit = false; // Declare whether the player has been hit
+    std::vector<Bullet>* bullet; // Initialize a pointer to the bullet vector
 };
 
+
+// Asteroid object as a child of obj
 class Asteroid final : public obj{
 public:
+    // Declare the asteroids properties and make sure the size isn't out of range
     Asteroid(const int xIN, const int yIN, const int dir, const int velIN, const int size) : obj(xIN, yIN, dir, velIN)
     {
+        // Fix the size if it is out of range
         if (size > 2 || size < 0) {this->size = 0;}
         else {this->size = size;}
     }
-    [[nodiscard]] int getSize() const {return size;}
-    [[nodiscard]] coords getCoords() const;
-    [[nodiscard]] int getSpeed() const {return data.vel;}
-    //bool collisions();
-    //const int *shapePtr;
+
+    [[nodiscard]] int getSize() const; // Return the size of the asteroid
+    [[nodiscard]] int getSpeed() const; // Return the speed of the asteroid
+    [[nodiscard]] coords getCoords() const; // Return the coordinates of the asteroid
+
 private:
-    int size; // 0 is the largest, 2 is the smallest
+    int size; // Initialize the size of the asteroid; 0 is the largest, 2 is the smallest
 };
 
 
