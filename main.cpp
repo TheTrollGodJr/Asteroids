@@ -9,7 +9,7 @@ using namespace std;
 
 // DISPLAY UPDATES
 void displayGameObject(const HDC& hdc);
-void displayGameInfo(HDC &hdc);
+void displayGameInfo(const HDC &hdc);
 
 // CALCULATE COORDINATES
 coords rotatePoint(coords p, float cx, float cy, float angleDeg);
